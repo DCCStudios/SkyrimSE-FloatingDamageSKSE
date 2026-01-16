@@ -1,6 +1,7 @@
 #include "Scaleform/FloatingDamageMenu.h"
 
 #include "FloatingDamageManager.h"
+#include "Settings.h"
 
 namespace Scaleform
 {
@@ -74,11 +75,7 @@ namespace Scaleform
     void FloatingDamageMenu::OnOpen()
     {
         _isOpen = true;
-        if (_view) {
-            RE::GFxValue args[1];
-            args[0].SetNumber(2);  // visible
-            _view->Invoke("_root.TrueHUD.SetVisibilityMode", nullptr, args, 1);
-        }
+        _configured = false;
     }
 
     void FloatingDamageMenu::OnClose()
@@ -90,6 +87,42 @@ namespace Scaleform
     {
         if (!_view) {
             return;
+        }
+
+        if (!_configured) {
+            auto* settings = Settings::GetSingleton();
+            RE::GFxValue args[28];
+            args[0].SetString("$EverywhereMediumFont");
+            args[1].SetNumber(0);
+            args[2].SetNumber(0);
+            args[3].SetNumber(settings->classicRiseSpeed);
+            args[4].SetNumber(settings->classicFadeStart);
+            args[5].SetNumber(settings->arcHeight);
+            args[6].SetNumber(settings->arcSpread);
+            args[7].SetNumber(settings->arcGravity);
+            args[8].SetNumber(settings->bounceInitialVelocity);
+            args[9].SetNumber(settings->bounceGravity);
+            args[10].SetNumber(settings->bounceDamping);
+            args[11].SetNumber(settings->bounceGroundLevel);
+            args[12].SetNumber(settings->spiralRadius);
+            args[13].SetNumber(settings->spiralSpeed);
+            args[14].SetNumber(settings->spiralRiseSpeed);
+            args[15].SetNumber(settings->spiralExpand);
+            args[16].SetNumber(settings->fountainInitialVelocity);
+            args[17].SetNumber(settings->fountainGravity);
+            args[18].SetNumber(settings->fountainSpread);
+            args[19].SetNumber(settings->fountainRandomness);
+            args[20].SetNumber(settings->matrixFallSpeed);
+            args[21].SetNumber(settings->matrixTravelDistance);
+            args[22].SetNumber(settings->matrixFadeDelay);
+            args[23].SetNumber(settings->distanceScaleMin);
+            args[24].SetNumber(settings->distanceScaleMax);
+            args[25].SetNumber(settings->baseFontSize);
+            args[26].SetNumber(settings->screenOffsetX);
+            args[27].SetNumber(settings->screenOffsetY);
+
+            _view->Invoke("_root.widget.Setup", nullptr, args, 28);
+            _configured = true;
         }
 
         FloatingDamageManager::GetSingleton()->UpdateScaleform(_view);

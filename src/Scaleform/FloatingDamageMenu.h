@@ -31,10 +31,11 @@ namespace Scaleform
 
         RE::GPtr<RE::GFxMovieView> _view;
         bool _isOpen{ false };
+        bool _configured{ false };
         chrono_clock::time_point _movieLastTime{ chrono_clock::now() };
 
-        static constexpr std::string_view FILE_NAME{ "TrueHUD" };
-        static constexpr std::string_view MENU_NAME{ "FloatingDamageSKSE" };
+        static constexpr std::string_view FILE_NAME{ "FloatingDamageV2" };
+        static constexpr std::string_view MENU_NAME{ "FloatingDamageV2" };
         static constexpr std::int8_t SORT_PRIORITY{ 0 };
     };
 }
