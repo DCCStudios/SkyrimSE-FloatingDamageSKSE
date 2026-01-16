@@ -18,6 +18,7 @@ set(HEADERS
     src/Menu.h
     src/Offsets.h
     src/SKSEMenuFramework.h
+    src/logger.h
 )
 
 set(OUTPUT_FOLDER "${CMAKE_SOURCE_DIR}/Compile")

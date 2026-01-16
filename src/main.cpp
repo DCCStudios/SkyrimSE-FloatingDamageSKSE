@@ -2,6 +2,7 @@
 #include "Hooks.h"
 #include "Menu.h"
 #include "Settings.h"
+#include "logger.h"
 
 namespace Plugin
 {
@@ -11,25 +12,6 @@ namespace Plugin
 
 namespace
 {
-    void InitializeLog()
-    {
-        auto path = logger::log_directory();
-        if (!path) {
-            stl::report_and_fail("Failed to find standard logging directory"sv);
-        }
-
-        auto pluginName = SKSE::PluginDeclaration::GetSingleton()->GetName();
-        *path /= std::format("{}.log", pluginName);
-        auto sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(path->string(), true);
-
-        auto log = std::make_shared<spdlog::logger>("log", std::move(sink));
-        log->set_level(spdlog::level::trace);
-        log->flush_on(spdlog::level::trace);
-
-        spdlog::set_default_logger(std::move(log));
-    spdlog::set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%n] [%l] %v");
-    }
-
     void OnMessage(SKSE::MessagingInterface::Message* a_msg)
     {
         if (!a_msg) {
@@ -81,7 +63,7 @@ extern "C" DLLEXPORT constinit auto SKSEPlugin_Version = []() {
 
 extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* a_skse)
 {
-    InitializeLog();
+    SetupLog();
     logger::info("{} v{} loading...", Plugin::NAME, Plugin::VERSION.string());
 
     SKSE::Init(a_skse);
