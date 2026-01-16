@@ -18,15 +18,16 @@ namespace
             stl::report_and_fail("Failed to find standard logging directory"sv);
         }
 
-        *path /= fmt::format("{}.log"sv, Plugin::NAME);
+        auto pluginName = SKSE::PluginDeclaration::GetSingleton()->GetName();
+        *path /= std::format("{}.log", pluginName);
         auto sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(path->string(), true);
 
-        auto log = std::make_shared<spdlog::logger>("global log"s, std::move(sink));
-        log->set_level(spdlog::level::info);
-        log->flush_on(spdlog::level::info);
+        auto log = std::make_shared<spdlog::logger>("log", std::move(sink));
+        log->set_level(spdlog::level::trace);
+        log->flush_on(spdlog::level::trace);
 
         spdlog::set_default_logger(std::move(log));
-        spdlog::set_pattern("[%H:%M:%S.%e] [%l] %v");
+    spdlog::set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%n] [%l] %v");
     }
 
     void OnMessage(SKSE::MessagingInterface::Message* a_msg)
