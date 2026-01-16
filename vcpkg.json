@@ -1,0 +1,12 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+  "name": "floating-damage-skse",
+  "version-semver": "1.0.0",
+  "description": "SKSE floating damage numbers with SKSE Menu Framework UI",
+  "dependencies": [
+    "commonlibsse-ng",
+    "spdlog",
+    "simpleini"
+  ]
+}
+
