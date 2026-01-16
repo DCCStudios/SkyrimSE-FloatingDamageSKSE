@@ -40,6 +40,7 @@ namespace
             Settings::GetSingleton()->Load();
             Hooks::Install();
             Menu::Register();
+            RE::DebugNotification("FloatingDamageSKSE loaded");
             logger::info("Floating Damage SKSE initialized");
             break;
         default:

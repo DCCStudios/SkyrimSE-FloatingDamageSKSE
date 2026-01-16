@@ -16,7 +16,7 @@ namespace Hooks
             return;
         }
 
-        if (a_amount == 0.0f) {
+        if (a_amount <= 0.0f) {
             return;
         }
 
@@ -29,15 +29,43 @@ namespace Hooks
             return;
         }
 
-        bool isHeal = a_amount > 0.0f;
-        FloatingDamageManager::GetSingleton()->AddFloatingNumber(a_actor, a_amount, isHeal);
+        FloatingDamageManager::GetSingleton()->AddFloatingNumber(a_actor, a_amount, true);
+    }
+
+    void HandleHealthDamageHook::thunk(RE::Actor* a_actor, RE::Actor* a_attacker, float a_damage)
+    {
+        func(a_actor, a_attacker, a_damage);
+
+        if (!a_actor) {
+            return;
+        }
+
+        if (a_damage == 0.0f) {
+            return;
+        }
+
+        if (a_actor->IsDead()) {
+            return;
+        }
+
+        if (a_actor->IsPlayerRef()) {
+            return;
+        }
+
+        auto* settings = Settings::GetSingleton();
+        if (!settings->enabled || !settings->showDamage) {
+            return;
+        }
+
+        FloatingDamageManager::GetSingleton()->AddFloatingNumber(a_actor, std::abs(a_damage), false);
     }
 
     void Install()
     {
         REL::Relocation<std::uintptr_t> vtbl{ RE::VTABLE_Actor[0] };
         RestoreActorValueHook::func = vtbl.write_vfunc(RestoreActorValueHook::idx, RestoreActorValueHook::thunk);
-        logger::info("Installed RestoreActorValue hook");
+        HandleHealthDamageHook::func = vtbl.write_vfunc(HandleHealthDamageHook::idx, HandleHealthDamageHook::thunk);
+        logger::info("Installed RestoreActorValue and HandleHealthDamage hooks");
     }
 }
 
