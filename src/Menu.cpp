@@ -9,7 +9,6 @@ namespace Menu
     {
         inline bool initialized{ false };
         inline bool hasUnsavedChanges{ false };
-        inline SKSEMenuFramework::Model::WindowInterface* overlayWindow{ nullptr };
     }
 
     void Register()
@@ -27,8 +26,6 @@ namespace Menu
 
         SKSEMenuFramework::SetSection("Floating Damage SKSE");
         SKSEMenuFramework::AddSectionItem("Settings", RenderSettings);
-        State::overlayWindow = SKSEMenuFramework::AddWindow(RenderOverlay);
-
         logger::info("Registered Floating Damage SKSE menu");
     }
 
@@ -326,60 +323,5 @@ namespace Menu
         }
     }
 
-    void __stdcall RenderOverlay()
-    {
-        auto* settings = Settings::GetSingleton();
-        if (!settings->enabled) {
-            return;
-        }
-
-        ImGuiIO* io = ImGui::GetIO();
-        if (!io || io->DisplaySize.x <= 0.0f || io->DisplaySize.y <= 0.0f) {
-            return;
-        }
-
-        static std::vector<FloatingDrawItem> drawItems;
-        FloatingDamageManager::GetSingleton()->CollectDrawItems(drawItems, io->DisplaySize.x, io->DisplaySize.y);
-
-        if (drawItems.empty()) {
-            if (State::overlayWindow) {
-                State::overlayWindow->IsOpen.store(false);
-            }
-            return;
-        }
-
-        if (State::overlayWindow) {
-            State::overlayWindow->IsOpen.store(true);
-        }
-
-        ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f), ImGuiCond_Always, ImVec2(0.0f, 0.0f));
-        ImGui::SetNextWindowSize(io->DisplaySize);
-        ImGui::SetNextWindowBgAlpha(0.0f);
-
-        ImGuiWindowFlags flags = ImGuiWindowFlags_NoDecoration |
-                                 ImGuiWindowFlags_NoMove |
-                                 ImGuiWindowFlags_NoSavedSettings |
-                                 ImGuiWindowFlags_NoFocusOnAppearing |
-                                 ImGuiWindowFlags_NoNav |
-                                 ImGuiWindowFlags_NoInputs;
-
-        if (ImGui::Begin("##FloatingDamageOverlay", nullptr, flags)) {
-            float baseFontSize = ImGui::GetFontSize();
-            for (const auto& item : drawItems) {
-                if (item.alpha <= 0.0f) {
-                    continue;
-                }
-
-                float scale = (baseFontSize > 0.0f) ? (item.fontSize / baseFontSize) : 1.0f;
-                ImGui::SetWindowFontScale(scale);
-                ImGui::SetCursorScreenPos(ImVec2(item.x, item.y));
-                ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(item.color.r, item.color.g, item.color.b, item.alpha));
-                ImGui::TextUnformatted(item.text.c_str());
-                ImGui::PopStyleColor();
-                ImGui::SetWindowFontScale(1.0f);
-            }
-        }
-        ImGui::End();
-    }
 }
 

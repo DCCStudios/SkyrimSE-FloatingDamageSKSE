@@ -3,6 +3,7 @@
 #include "Menu.h"
 #include "Settings.h"
 #include "logger.h"
+#include "Scaleform/Scaleform.h"
 
 namespace Plugin
 {
@@ -23,6 +24,7 @@ namespace
             Settings::GetSingleton()->Load();
             Hooks::Install();
             Menu::Register();
+            Scaleform::Register();
             RE::DebugNotification("FloatingDamageSKSE loaded");
             logger::info("Floating Damage SKSE initialized");
             break;

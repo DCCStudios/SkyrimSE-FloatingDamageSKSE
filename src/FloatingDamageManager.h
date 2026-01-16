@@ -2,16 +2,6 @@
 
 #include "Settings.h"
 
-struct FloatingDrawItem
-{
-    std::string text;
-    float x{ 0.0f };
-    float y{ 0.0f };
-    float fontSize{ 22.0f };
-    ColorRGB color;
-    float alpha{ 1.0f };
-};
-
 class FloatingDamageManager
 {
 public:
@@ -22,12 +12,17 @@ public:
     }
 
     void AddFloatingNumber(RE::Actor* a_actor, float a_delta, bool a_isHeal);
-    void CollectDrawItems(std::vector<FloatingDrawItem>& a_items, float a_screenWidth, float a_screenHeight);
+    void UpdateScaleform(RE::GPtr<RE::GFxMovieView> a_view);
     void Clear();
 
 private:
     struct Entry
     {
+        std::string text;
+        uint32_t color{ 0xFFFFFF };
+        RE::GFxValue object;
+        uint32_t widgetID{ 0 };
+        bool created{ false };
         RE::NiPoint3 origin{};
         float startTime{ 0.0f };
         float lastUpdateTime{ 0.0f };
@@ -50,9 +45,11 @@ private:
     float ComputeAlpha(const Entry& a_entry, float a_progress) const;
     float ComputeDistanceScale(float a_distance) const;
     std::string FormatNumber(float a_value, bool a_isHeal) const;
+    uint32_t MakeColor(const ColorRGB& a_color) const;
 
     std::vector<Entry> _entries;
     std::mt19937 _rng;
     std::chrono::steady_clock::time_point _startTime;
+    uint32_t _nextWidgetID{ 0 };
 };
 

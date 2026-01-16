@@ -71,6 +71,14 @@ void FloatingDamageManager::AddFloatingNumber(RE::Actor* a_actor, float a_delta,
     entry.matrixDirection = randDir(_rng) > 0.5f ? 1.0f : -1.0f;
     entry.offset = { 0.0f, 0.0f, 0.0f };
     entry.velocity = { 0.0f, 0.0f, 0.0f };
+    entry.widgetID = _nextWidgetID++;
+    entry.text = FormatNumber(entry.magnitude, entry.isHeal);
+
+    if (entry.mode == AnimationMode::Matrix && settings->matrixGreenTint && !entry.isHeal) {
+        entry.color = 0x00FF00;
+    } else {
+        entry.color = entry.isHeal ? MakeColor(settings->healColor) : MakeColor(settings->damageColor);
+    }
 
     if (entry.mode == AnimationMode::Bounce) {
         entry.velocity.z = settings->bounceInitialVelocity;
@@ -89,9 +97,11 @@ void FloatingDamageManager::AddFloatingNumber(RE::Actor* a_actor, float a_delta,
     _entries.push_back(entry);
 }
 
-void FloatingDamageManager::CollectDrawItems(std::vector<FloatingDrawItem>& a_items, float a_screenWidth, float a_screenHeight)
+void FloatingDamageManager::UpdateScaleform(RE::GPtr<RE::GFxMovieView> a_view)
 {
-    a_items.clear();
+    if (!a_view) {
+        return;
+    }
 
     auto* settings = Settings::GetSingleton();
     if (!settings->enabled) {
@@ -103,11 +113,21 @@ void FloatingDamageManager::CollectDrawItems(std::vector<FloatingDrawItem>& a_it
         return;
     }
 
+    float stageWidth = 1280.0f;
+    float stageHeight = 720.0f;
+    if (auto def = a_view->GetMovieDef()) {
+        stageWidth = def->GetWidth();
+        stageHeight = def->GetHeight();
+    }
+
     float now = NowSeconds();
 
     for (auto it = _entries.begin(); it != _entries.end();) {
         float age = now - it->startTime;
         if (age < 0.0f || age >= it->duration) {
+            if (it->object.IsDisplayObject()) {
+                it->object.Invoke("dispose", nullptr, nullptr, 0);
+            }
             it = _entries.erase(it);
             continue;
         }
@@ -129,6 +149,9 @@ void FloatingDamageManager::CollectDrawItems(std::vector<FloatingDrawItem>& a_it
         float dz = worldPos.z - playerPos.z;
         float distance = std::sqrt(dx * dx + dy * dy + dz * dz);
         if (distance > settings->maxDistance) {
+            if (it->object.IsDisplayObject()) {
+                it->object.Invoke("dispose", nullptr, nullptr, 0);
+            }
             it = _entries.erase(it);
             continue;
         }
@@ -136,28 +159,44 @@ void FloatingDamageManager::CollectDrawItems(std::vector<FloatingDrawItem>& a_it
         float screenX = 0.0f;
         float screenY = 0.0f;
         float depth = 0.0f;
-        if (!WorldToScreen(worldPos, a_screenWidth, a_screenHeight, screenX, screenY, depth)) {
+        if (!WorldToScreen(worldPos, stageWidth, stageHeight, screenX, screenY, depth)) {
             ++it;
             continue;
         }
 
-        screenX += settings->screenOffsetX * a_screenWidth;
-        screenY += settings->screenOffsetY * a_screenHeight;
+        screenX += settings->screenOffsetX * stageWidth;
+        screenY += settings->screenOffsetY * stageHeight;
 
-        FloatingDrawItem drawItem;
-        drawItem.text = FormatNumber(it->magnitude, it->isHeal);
-        drawItem.x = screenX;
-        drawItem.y = screenY;
-        drawItem.alpha = ComputeAlpha(*it, progress);
-        drawItem.fontSize = settings->baseFontSize * ComputeDistanceScale(distance);
+        if (!it->created) {
+            RE::GFxValue arg;
+            arg.SetNumber(it->widgetID);
 
-        if (it->mode == AnimationMode::Matrix && settings->matrixGreenTint && !it->isHeal) {
-            drawItem.color = { 0.0f, 1.0f, 0.0f };
-        } else {
-            drawItem.color = it->isHeal ? settings->healColor : settings->damageColor;
+            RE::GFxValue obj;
+            a_view->Invoke("_root.TrueHUD.AddFloatingTextWidget", &obj, &arg, 1);
+            if (obj.IsDisplayObject()) {
+                it->object = obj;
+                it->created = true;
+
+                RE::GFxValue args[4];
+                args[0].SetString(it->text);
+                args[1].SetNumber(it->color);
+                args[2].SetNumber(it->duration);
+                args[3].SetBoolean(false);
+                it->object.Invoke("loadConfig", nullptr, args, 4);
+            }
         }
 
-        a_items.push_back(std::move(drawItem));
+        if (it->object.IsDisplayObject()) {
+            float alpha = ComputeAlpha(*it, progress);
+            float scale = settings->baseFontSize / 22.0f;
+            scale *= ComputeDistanceScale(distance);
+
+            RE::GFxValue::DisplayInfo displayInfo;
+            displayInfo.SetPosition(screenX, screenY);
+            displayInfo.SetScale(scale * 100.0f, scale * 100.0f);
+            displayInfo.SetAlpha(alpha * 100.0f);
+            it->object.SetDisplayInfo(displayInfo);
+        }
         ++it;
     }
 }
@@ -287,5 +326,13 @@ std::string FloatingDamageManager::FormatNumber(float a_value, bool a_isHeal) co
         return std::format("+{}", rounded);
     }
     return std::format("{}", rounded);
+}
+
+uint32_t FloatingDamageManager::MakeColor(const ColorRGB& a_color) const
+{
+    auto r = static_cast<uint32_t>(std::clamp(a_color.r, 0.0f, 1.0f) * 255.0f);
+    auto g = static_cast<uint32_t>(std::clamp(a_color.g, 0.0f, 1.0f) * 255.0f);
+    auto b = static_cast<uint32_t>(std::clamp(a_color.b, 0.0f, 1.0f) * 255.0f);
+    return (r << 16) | (g << 8) | b;
 }
 

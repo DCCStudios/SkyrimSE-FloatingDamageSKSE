@@ -8,6 +8,8 @@ set(SOURCES
     src/Settings.cpp
     src/FloatingDamageManager.cpp
     src/Menu.cpp
+    src/Scaleform/Scaleform.cpp
+    src/Scaleform/FloatingDamageMenu.cpp
 )
 
 set(HEADERS
@@ -19,6 +21,8 @@ set(HEADERS
     src/Offsets.h
     src/SKSEMenuFramework.h
     src/logger.h
+    src/Scaleform/Scaleform.h
+    src/Scaleform/FloatingDamageMenu.h
 )
 
 set(OUTPUT_FOLDER "${CMAKE_SOURCE_DIR}/Compile")
@@ -66,6 +70,9 @@ if(DEFINED OUTPUT_FOLDER)
         COMMAND "${CMAKE_COMMAND}" -E copy_if_different
             "${CMAKE_SOURCE_DIR}/FloatingDamageSKSE.ini"
             "${DLL_FOLDER}/FloatingDamageSKSE.ini"
+        COMMAND "${CMAKE_COMMAND}" -E copy_directory
+            "${CMAKE_SOURCE_DIR}/Interface"
+            "${OUTPUT_FOLDER}/Interface"
         VERBATIM
     )
 
